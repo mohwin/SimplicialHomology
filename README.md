@@ -33,8 +33,9 @@ Ist die Maus im Zeichenbereich, so kann man mit Shortcuts auf diese Funktionen z
 Wichtig ist, dass das Programm zu Zeit die Verklebungen mit a,b,c...,z bzw. mit A,B,C...,Z darstellen kann. Werden mehr Buchstaben gebraucht so produziert das Programm eine fehlerbehaftete bildliche Repräsentation, es sollte links auf die Eingabeliste geachtet werden.
 
 Die **Eingabeliste** links vom Zeichenbereich gibt die Eingaben an, die für einen Deltas.DeltaKomplex (aus dem SimplicialHomology JAR) gemacht werden. Man kann sie wie folgt übersetzen:
-+(a,b)      entspricht addSimplex(s(a,b))
-=(a,b)(c,d) entspricht glue(s(a,b),s(c,d))
+1) +(a,b)      entspricht addSimplex(s(a,b))
+2) =(a,b)(c,d) entspricht glue(s(a,b),s(c,d))
+
 wie bei der Methode addSimplex(), werden alle UnterSeiten automatisch miteingefügt.
 
 In dem kleinen Textfeld unterhalb dieser Liste kann man auch selbst Eingaben machen, um so auch höher dimensionalere Simplizes eingeben zu können. Diese Eingabe ist noch in Arbeit, aber funktionstüchtig. Gibt man Beispielsweise "+ (1,2,3,4)" ein, so wird dieser Simplex korrekt hinzugefügt. Man kann auch Einträge entfernen, um zum Beispiel die Einträge "+ (1,2,3)" und "=(3,4)(5,6)" zu entfernen nimmt kman diese und ersetz das "+" oder "=" mit einem "-": "-(1,2,3)" und "-(3,4)(5,6)".
