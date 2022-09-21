@@ -1,5 +1,6 @@
 package Deltas;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -14,7 +15,7 @@ import java.util.TreeSet;
  * (die der Ordnung widersprechen können) eine neue Ordnung zu bauen, welche ALLE implizierten Relationen erfüllt und die 
  * natürliche Ordnung dabei so wenig wie möglich verletzt.
  */
-public class Sortierer<T extends Comparable<T>> {
+public class Sortierer<T extends Comparable<T>> implements Serializable{
     
     
     private LinkedList<T> vertices;
@@ -22,13 +23,13 @@ public class Sortierer<T extends Comparable<T>> {
     private List<T> verticesInNewOrder;
     private boolean used = false; // Sagt aus, ob die Instanz bereits abgearbeitet wurde.
 
-    private SortedSet<T> zyklus = new TreeSet<T>();
+    private TreeSet<T> zyklus = new TreeSet<T>();
     
     /**
      * Gibt einen Zyklus zurück, falls gefunden. Gibt null zurück, falls der Sortierer noch unverbraucht ist.
      * @return
      */
-    public SortedSet<T> getZyklus() {
+    public TreeSet<T> getZyklus() {
         if (!used) return null;
         return zyklus;
     }
@@ -162,14 +163,35 @@ public class Sortierer<T extends Comparable<T>> {
         
         if (cyclefree) {
             // Rückgabe eines Komparators basierend auf der sortiertet Liste
-            return (a,b) -> {
+            /*return (a,b) -> {
                 if (a.equals(b)) return 0;
+                if (!verticesInNewOrder.contains(a) || !verticesInNewOrder.contains(b)) {
+                    return a.compareTo(b); //  Nutzt nat. Ordnung bei unknown Vertices
+                }
                 for (T v:verticesInNewOrder) {
                     if (v.equals(a)) return -1; // a ist kleiner als b
                     else if (v.equals(b)) return 1;
                 }
                 throw new IllegalStateException("this should never be thrown, something went very very wrong.");
+            };*/ // Dies war vor der Serialize- Geschichte
+
+            return new CopS() {
+
+                @Override
+                public int compare(T a, T b) {
+                    if (a.equals(b)) return 0;
+                if (!verticesInNewOrder.contains(a) || !verticesInNewOrder.contains(b)) {
+                    return a.compareTo(b); //  Nutzt nat. Ordnung bei unknown Vertices
+                }
+                for (T v:verticesInNewOrder) {
+                    if (v.equals(a)) return -1; // a ist kleiner als b
+                    else if (v.equals(b)) return 1;
+                }
+                throw new IllegalStateException("this should never be thrown, something went very very wrong.");
+                }
+
             };
+
         }
 
 
@@ -177,6 +199,9 @@ public class Sortierer<T extends Comparable<T>> {
     }
 
     
+    private abstract class CopS implements Comparator<T>,Serializable {
+
+    }
 
 
 }

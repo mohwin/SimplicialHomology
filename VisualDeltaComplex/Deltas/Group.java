@@ -5,7 +5,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-class Group<T extends RecordHIB<T>> {
+import GUI.Nutzfkten;
+
+public class Group<T extends RecordHIB<T>> {
 
     int freepart;
     private final List<T> elDivs = new ArrayList<>();
@@ -20,9 +22,14 @@ class Group<T extends RecordHIB<T>> {
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
-        
+        String upscrt = Nutzfkten.UPSCRIPT_NUMBERS;
+        String freeString = Integer.toString(freepart);
+        for (int i=0;i<=9;i++) {
+            freeString = freeString.replace(Integer.toString(i).charAt(0),upscrt.charAt(i));
+        }
+
         if (freepart > 1) {
-            s.append(nullobj.GroupRepr()+"^" + freepart);
+            s.append(nullobj.GroupRepr()+ freeString);
             for (T ff : elDivs) {
                 s.append(" + ");
                 s.append(nullobj.GroupRepr());
@@ -40,7 +47,7 @@ class Group<T extends RecordHIB<T>> {
         else if (freepart == 0) {
 
             if (elDivs.isEmpty())
-                return "{1}";
+                return "0";
 
             int cc = 0;
             for (T ff : elDivs) {

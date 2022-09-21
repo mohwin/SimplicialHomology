@@ -1,5 +1,6 @@
 package Deltas;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -8,7 +9,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class VisualSimplex<V extends Comparable<V>> implements Iterable<V> {
+public class VisualSimplex<V extends Comparable<V>> implements Iterable<V>, Serializable {
     
 
     private SortedSet<V> simplex = new TreeSet<>();

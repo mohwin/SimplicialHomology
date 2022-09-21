@@ -22,6 +22,8 @@ public class Options {
 
     int vertexRadius = 10; 
 
+
+    boolean showVertexEqClass = true;
     Color vertexColorNormal = Color.gray;
     Color vertexBezColor = Color.WHITE;
     Color edgeColorNormal = Color.gray;
@@ -40,7 +42,8 @@ public class Options {
 
 
     // Für den Ausgabebereich----------------------------------------------------------------
-    Font ausgabeBereichFont = new Font("Arial",Font.BOLD,30);
+    Font ausgabeBereichFont = new Font("Arial",Font.BOLD,24);
+    Font ausgabeBereichButtonFont = new Font("Arial",Font.BOLD,12);
     Color ausgabeBereichTextColor = Color.WHITE;
 
 

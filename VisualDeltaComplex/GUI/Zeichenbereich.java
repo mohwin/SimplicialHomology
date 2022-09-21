@@ -15,6 +15,9 @@ import Deltas.VisualSimplex;
 
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public class Zeichenbereich extends JPanel {
 
@@ -26,12 +29,15 @@ public class Zeichenbereich extends JPanel {
 
     private Deque<VisualVertex> glueIntermediateQueue = new LinkedList<>();
 
-    private SortedSet<VisualVertex> vertexZyklus = new TreeSet<>();
+    private TreeSet<VisualVertex> vertexZyklus = new TreeSet<>();
 
     private int vertexRadius;
 
     private Map<VisualSimplex<VisualVertex>,String> eqBezMap = new HashMap<>();
 
+    private Deque<ZeichenMemento> mementos = new LinkedList<>();
+
+    
 
     /**
      * Teure Funktion die die Stringbezeichner aktualisiert.
@@ -70,10 +76,13 @@ public class Zeichenbereich extends JPanel {
         vertexRadius * 2 - 1, vertexRadius * 2 - 1);
 
         String veq = this.eqBezMap.get(parent.deltaKomplex.transformSingIntoVisualSimpl(v));
-        if (veq == null) veq = Integer.toString(v.vertexID);
-        else veq = veq + "("+ Integer.toString(v.vertexID)+")";
-        //TODO Add toggle Option
-        //TODO But not here, show verticeodering
+        if (parent.opt.showVertexEqClass) {
+            if (veq == null) veq = Integer.toString(v.vertexID);
+            else veq = veq + "("+ Integer.toString(v.vertexID)+")";
+        }
+        else {
+            veq = Integer.toString(v.vertexID);
+        }
         Color oldCol = g.getColor();
         g.setColor(parent.opt.vertexBezColor);
         g.drawString(veq,
@@ -161,6 +170,37 @@ public class Zeichenbereich extends JPanel {
     }
 
 
+    private void drawEdgesZYKLUS(Graphics g) {
+
+        if (this.vertexZyklus.isEmpty()) return;
+        
+        if (this.vertexZyklus.size() == 1) { // Eig. nicht möglich
+            g.setColor(parent.opt.vertexColorWarning);
+            drawVertexCircle(g, vertexZyklus.first());
+            return;
+        }
+
+
+
+        VisualVertex prev = null; boolean frun = true;
+        for (VisualVertex v: vertexZyklus) {
+            g.setColor(parent.opt.vertexColorWarning);
+            drawVertexCircle(g, v);
+
+            if (!frun) {
+                Nutzfkten.drawSignedArrow(prev.posx, v.posx, prev.posy, v.posy,
+                    "", vertexRadius/2, g, (int) (vertexRadius * 2), parent.opt.edgeColorWarning, Color.BLACK);
+            }
+            frun = false;
+            prev = v;
+        }
+        // draw arrow from last to first El.
+        prev = vertexZyklus.last();
+        VisualVertex v = vertexZyklus.first();
+        Nutzfkten.drawSignedArrow(prev.posx, v.posx, prev.posy, v.posy,
+                    "", vertexRadius/2, g, (int) (vertexRadius * 2), parent.opt.edgeColorWarning, Color.BLACK);
+
+    }
 
 
     @Override
@@ -188,6 +228,8 @@ public class Zeichenbereich extends JPanel {
             g.fillPolygon(xs, ys, 3);
             String bez = this.eqBezMap.get(vs);
             if (bez == null) bez = "";
+            
+            g.setColor(parent.opt.zeichenbereichTextColor);
             g.drawString(bez, (xs[0] + xs[1] + xs[2]) / 3, (ys[0] + ys[1] + ys[2]) / 3);
         }
 
@@ -221,8 +263,8 @@ public class Zeichenbereich extends JPanel {
             parent.opt.edgeColorGlueStacked, parent.opt.twoSimplexColorGlueStacked);
 
 
-        //TODO  Malen der Zyklus Kanten
-
+        //Malen des zuletzt gefundenen Zyklus
+        drawEdgesZYKLUS(g);
        
         // Malen der Vertex-Queue Kanten
         drawEdgesOf(g, vertexQueue, parent.opt.vertexColorMarked, parent.opt.edgeColorMarked,parent.opt.twoSimplexColorMarked);
@@ -240,6 +282,23 @@ public class Zeichenbereich extends JPanel {
 
     private double scale = 1.0;
     final double ZOOM_FACTOR = 1.2;
+
+    
+
+    void updateAusgabe() {
+        JTextField c =  parent.ausgabebereich.currentMarkedField;
+        if (vertexQueue.isEmpty() && glueIntermediateQueue.isEmpty())
+            if (vertexZyklus.isEmpty())
+                c.setText("Rechtsklick zum markieren");
+            else
+                c.setText("Zyklus: "+vertexZyklus.toString());
+        else
+            c.setText(vertexQueue.toString() + " | "+ glueIntermediateQueue.toString());
+        
+        parent.ausgabebereich.repaint();
+
+    }
+
 
     private void correctMouseZoom(MouseEvent e) {
         int x = e.getX();
@@ -260,12 +319,14 @@ public class Zeichenbereich extends JPanel {
                     vertexQueue.poll();
                 repaint();
             }
+            updateAusgabe();
         }
     }
 
     private void EVENT_addVertex(MouseEvent e) {
         VisualVertex v = getVertexOnPos(e.getX(), e.getY());
         if (v == null) {
+            secureMemento();
             v = new VisualVertex(maxVertex, e.getX(), e.getY());
             maxVertex += 1;
             parent.deltaKomplex.addVertex(v);
@@ -275,6 +336,15 @@ public class Zeichenbereich extends JPanel {
     }
 
     /**
+     * Speichert momentanen Komplex als Memento
+     */
+    private void secureMemento() {
+        if (mementos.size()>10)
+            mementos.removeFirst();
+        mementos.add(new ZeichenMemento(parent.deltaKomplex.getMemento(),maxVertex,scale));
+    }
+    
+    /**
      * Action die das bauen eines Simplex aus gewählten Vertices übernimmt.
      */
     final class BuildSimplexAction extends AbstractAction {
@@ -282,11 +352,13 @@ public class Zeichenbereich extends JPanel {
         @Override
         public void actionPerformed(ActionEvent e) {
             if (vertexQueue.size() > 1) {
+                secureMemento();
                 parent.deltaKomplex.addSimplex(vertexQueue);
                 // Alle bis auf den Letzten Vertice entmarkieren
                 while (vertexQueue.size() > 1) vertexQueue.poll();
                 repaint();
             }
+            updateAusgabe();
 
         }
 
@@ -307,6 +379,7 @@ public class Zeichenbereich extends JPanel {
 
                 repaint();
             }
+            updateAusgabe();
             
         }
 
@@ -323,15 +396,109 @@ public class Zeichenbereich extends JPanel {
             if (vertexQueue.isEmpty()) return;
             if (vertexQueue.size() != glueIntermediateQueue.size()) return;
             if (vertexQueue.containsAll(glueIntermediateQueue)) return;
-
+            secureMemento();
             vertexZyklus = parent.deltaKomplex.glue(vertexQueue, glueIntermediateQueue);
+            if (!vertexZyklus.isEmpty()) { // zyklus gefunden-> memento verwerfen
+                mementos.pollLast();
+            }
+            glueIntermediateQueue.clear();
+            glueIntermediateQueue.addAll(vertexQueue);
+
+            vertexQueue.clear();
+            // Bezeichner aktualisieren
+            updateEqBezMap();
+            parent.komplexRepr.repaint();
+            repaint();
+            updateAusgabe();
+        }
+
+    }
+
+
+    final class RemoveVertexAction extends AbstractAction {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (vertexQueue.isEmpty()) return;
+            secureMemento();
+            for (VisualVertex v : vertexQueue)
+                parent.deltaKomplex.removeVertex(v);
             
             vertexQueue.clear();
             glueIntermediateQueue.clear();
             // Bezeichner aktualisieren
             updateEqBezMap();
             parent.komplexRepr.repaint();
+            updateAusgabe();
             repaint();
+        }
+
+    }
+
+    final class PopAllQueuesAction extends AbstractAction {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+                        
+            vertexQueue.clear();
+            glueIntermediateQueue.clear();
+            updateAusgabe();
+            repaint();
+        }
+
+    }
+
+    final class UndoDeltaChangingAction extends AbstractAction {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if(mementos.peekLast() == null ) return;
+            ZeichenMemento lst =  mementos.pollLast();
+            parent.deltaKomplex = lst.cmpl;
+            maxVertex = lst.maxVertex;
+
+            vertexQueue.clear();
+            glueIntermediateQueue.clear();
+            updateEqBezMap();
+            updateAusgabe();
+            parent.komplexRepr.repaint();
+            repaint();
+        }
+
+    }
+
+    final class ClearBoardAction extends AbstractAction {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            eqBezMap.clear();
+            glueIntermediateQueue.clear();
+            vertexQueue.clear();
+            vertexZyklus.clear();
+            mementos.clear();
+            parent.deltaKomplex.clear();
+            scale = 1.0;
+            maxVertex = 0;
+            updateAusgabe();
+            parent.komplexRepr.repaint();
+            repaint();
+        }
+
+    }
+
+    /**
+     * Pusht stack, fasll keiner vorhanden, und verklebt falls Stack vorhadnen
+     */
+    final class PushStacksOrGlueAction extends AbstractAction {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (glueIntermediateQueue.isEmpty()) { // addToStack
+                new AddQueueToGlueStackAction().actionPerformed(e);
+            }
+            else {
+                new PushGlueStacksAction().actionPerformed(e);
+            }
         }
 
     }
@@ -340,11 +507,19 @@ public class Zeichenbereich extends JPanel {
         getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "buildSimplex");
         getActionMap().put("buildSimplex", new BuildSimplexAction());
 
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_V, 0), "addQueueToGlueStack");
-        getActionMap().put("addQueueToGlueStack", new AddQueueToGlueStackAction());
-        
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "pushGlueStacks");
-        getActionMap().put("pushGlueStacks", new PushGlueStacksAction());
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "pushStacksOrGlue");
+        getActionMap().put("pushStacksOrGlue", new PushStacksOrGlueAction());
+
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "removeVertex");
+        getActionMap().put("removeVertex", new RemoveVertexAction());
+
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0), "popAllQueues");
+        getActionMap().put("popAllQueues", new PopAllQueuesAction());
+
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "undoDeltaChanging");
+        getActionMap().put("undoDeltaChanging", new UndoDeltaChangingAction());
+
+        getActionMap().put("clearBoard",new ClearBoardAction());
     }
     // --------------------------------------------------------------------------------------------
 
@@ -356,8 +531,8 @@ public class Zeichenbereich extends JPanel {
 
     Zeichenbereich(GUI_Main par) {
         this.parent = par;
-
         initOptions();
+        this.
 
         init_keyBindings();
 
@@ -429,15 +604,18 @@ public class Zeichenbereich extends JPanel {
                 // EVENT add Vertex to Queue
                 if (e.getButton() == MouseEvent.BUTTON3) {
                     EVENT_addVertexToQueue(e);
+                    vertexZyklus.clear(); // remove ZyklusDisplay
                 }
                 // EVENT add Vertex
                 if (e.getButton() == MouseEvent.BUTTON1) {
                     EVENT_addVertex(e);
+                    vertexZyklus.clear();// remove ZyklusDisplay
                 }
                 // EVENT addVertex And Mark it
                 if (e.getButton() == MouseEvent.BUTTON2) {
                     EVENT_addVertex(e);
                     EVENT_addVertexToQueue(e);
+                    vertexZyklus.clear();// remove ZyklusDisplay
                 }
 
             }
@@ -455,4 +633,22 @@ public class Zeichenbereich extends JPanel {
 
     }
 
+    void saveCurrMemento(ObjectOutputStream os) throws IOException {
+        secureMemento();
+
+        os.writeObject(mementos.pollLast());
+    }
+
+    void loadCompl(ObjectInputStream is) throws ClassNotFoundException, IOException {
+        ZeichenMemento lst = (ZeichenMemento) is.readObject();
+        parent.deltaKomplex = lst.cmpl;
+        maxVertex = lst.maxVertex;
+
+        vertexQueue.clear();
+        glueIntermediateQueue.clear();
+        updateEqBezMap();
+        updateAusgabe();
+        parent.komplexRepr.repaint();
+        repaint();
+    }
 }

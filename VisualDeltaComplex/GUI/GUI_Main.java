@@ -1,13 +1,20 @@
 package GUI;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 
 import Deltas.DeltaComplex;
 
 import java.awt.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collection;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
+
 
 public class GUI_Main extends JFrame {
     
@@ -15,9 +22,9 @@ public class GUI_Main extends JFrame {
 
     DeltaComplex<VisualVertex> deltaKomplex = new DeltaComplex<>();
 
-    Ausgabebereich ausgabebereich = new Ausgabebereich(this);
-
     Zeichenbereich zeichenbereich = new Zeichenbereich(this);
+
+    Ausgabebereich ausgabebereich = new Ausgabebereich(this);
 
     KomplexRepr komplexRepr = new KomplexRepr(this);
 
@@ -48,7 +55,7 @@ public class GUI_Main extends JFrame {
     private void initWindow(){
         //TODO load Options ... 
 
-        setTitle("Berechnung der Homologie von "+ Nutzfkten.DELTA + "-Komplexen");
+        setTitle("Berechnung der Homologie von "+ Nutzfkten.DELTA + "-Komplexen (unf alpha Version)");
         setSize(opt.mainWindowSize.x,opt.mainWindowSize.y);
         
         getContentPane().setBackground(opt.backGroundColor);
@@ -103,10 +110,78 @@ public class GUI_Main extends JFrame {
         // Menu Bar
         JMenuBar menubar = new JMenuBar();
         JMenu Datei = new JMenu("Datei");
-        JMenu Berechnen = new JMenu("Berechnen");
-       
+
+
+        JMenuItem cls = new JMenuItem("Neu");
+        JMenuItem speichern = new JMenuItem("Speichern unter");
+        JMenuItem laden = new JMenuItem("Öffnen");
+        cls.addActionListener(zeichenbereich.getActionMap().get("clearBoard"));
+        
+        FileFilter filter = new FileFilter() {
+
+
+            @Override
+            public boolean accept(File f) {
+                if (f.isDirectory()) return true;
+                return f.toString().endsWith(".vdlts");
+            }
+
+            @Override
+            public String getDescription() {
+                return Nutzfkten.DELTA + "-Komplex Speicherdatei";
+            }
+            
+        };
+        speichern.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(filter);
+            
+            if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File file = fileChooser.getSelectedFile();
+                if (!file.exists()) 
+                    try{
+                        file.createNewFile();
+                    }
+                    catch (Exception err){
+                        System.err.println("Ein fehler beim Neu Erstellend der Speicherdatei ist aufgetreten");
+                        System.exit(-1);
+                    }
+                try {
+                    FileOutputStream fos = new FileOutputStream(file);
+                    ObjectOutputStream os = new ObjectOutputStream(fos);
+                    zeichenbereich.saveCurrMemento(os);
+                    os.close();
+                }
+                catch (Exception err) {
+                    System.err.println(err.getMessage());
+                    System.exit(-1);
+                }
+            }
+
+        });
+        laden.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(filter);
+            if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File file = fileChooser.getSelectedFile();
+                try {
+                    FileInputStream fis = new FileInputStream(file);
+                    ObjectInputStream is = new ObjectInputStream(fis);
+                    zeichenbereich.loadCompl(is);
+                    is.close();
+                }
+                catch (Exception err) {
+                    System.err.println(err.getMessage());
+                    System.exit(-1);
+                }
+            }
+        });
+
+        Datei.add(cls);
+        Datei.add(speichern);
+        Datei.add(laden);
+
         menubar.add(Datei);
-        menubar.add(Berechnen);
 
         setJMenuBar(menubar);
         
@@ -135,4 +210,6 @@ public class GUI_Main extends JFrame {
             } 
         });
     }
+
+
 }

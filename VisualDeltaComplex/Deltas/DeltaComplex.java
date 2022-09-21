@@ -11,9 +11,10 @@ import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.io.Serializable;
 
 
-public class DeltaComplex<V extends Comparable<V>> {
+public class DeltaComplex<V extends Comparable<V>> implements Serializable {
     public static final String _version = "1";
     
     
@@ -186,15 +187,28 @@ public class DeltaComplex<V extends Comparable<V>> {
         return vertices;
     }
 
+    /*
+     * Kopiert das Set mittels einer Shallow Copy. Erlaubt so das (shallow) Manipulieren an returnted set, ohne
+     * das vorherige zu verändern.
+     */
+    private SortedSet<V> setCopyOf(SortedSet<V> set) {
+        TreeSet<V> ret = new TreeSet<>();
+        ret.addAll(set);
+        return ret;
+    }
 
+    private TreeSet<V> glue_unsafe(Collection<V> s1, Collection<V> s2) {
+        HashMap<V,SortedSet<V>> implRelClone = new HashMap<>();
 
-    private SortedSet<V> glue_unsafe(Collection<V> s1, Collection<V> s2) {
+        for (Map.Entry<V,SortedSet<V>> e : implicitRelations.entrySet()) 
+            implRelClone.put(e.getKey(), setCopyOf(e.getValue()));
+
         // Ordnung implizieren
         SortedSet<V> lowerSet = new TreeSet<>();
         for (V v: s1) {
             SortedSet<V> lowerSetClone = new TreeSet<>();
             lowerSetClone.addAll(lowerSet);
-            implicitRelations.merge(v,lowerSetClone,(a,b) -> {
+            implRelClone.merge(v,lowerSetClone,(a,b) -> {
                 TreeSet<V> n = new TreeSet<>();
                 n.addAll(a); n.addAll(b);
                 return n;
@@ -206,7 +220,7 @@ public class DeltaComplex<V extends Comparable<V>> {
         for (V v: s2) { 
             SortedSet<V> lowerSetClone = new TreeSet<>();
             lowerSetClone.addAll(lowerSet);
-            implicitRelations.merge(v,lowerSetClone,(a,b) -> {
+            implRelClone.merge(v,lowerSetClone,(a,b) -> {
                 TreeSet<V> n = new TreeSet<>();
                 n.addAll(a); n.addAll(b);
                 return n;
@@ -216,13 +230,15 @@ public class DeltaComplex<V extends Comparable<V>> {
         lowerSet.clear();
 
         // Nun VertizeMenge Ordnen?
-        Sortierer<V> sorter = new Sortierer<>(getVertices(null), implicitRelations);
+        Sortierer<V> sorter = new Sortierer<>(getVertices(null), implRelClone);
         Comparator<V> oldComp = currentOrdering; // Sicherstellen des vorherigen Comparators
         currentOrdering = sorter.getComparator();
         if (currentOrdering == null) { // Zyklus
             currentOrdering = oldComp; // Wiederherstellen des alten Komparators
             return sorter.getZyklus();
         }
+        // aktualisieren der implRel
+        this.implicitRelations = implRelClone;
         reorderEach();
 
         glueRec(new VisualSimplex<>(s1, currentOrdering), new VisualSimplex<>(s2, currentOrdering));
@@ -443,6 +459,16 @@ public class DeltaComplex<V extends Comparable<V>> {
 
     public List<String> stringListRepr() {
         List<String> ret = new ArrayList<>();
+        // Ordnung hinzufügen:
+        StringBuilder ordnung = new StringBuilder();
+        for (V v :getVertices(getCurrentOrdering())) {
+            ordnung.append(v.toString()).append(" < ");
+        }
+        int end = ordnung.length() - 3;
+        if (end > 0)
+            ret.add(ordnung.substring(0, ordnung.length() - 3));
+        // Sonst gab es keine Vertices
+
         for (int i = this.dimension();i>=0;i--) {
             ret.addAll(getSimplizes(i).stream()
                 .filter(vs -> isRoot(vs))
@@ -500,6 +526,7 @@ public class DeltaComplex<V extends Comparable<V>> {
         this.currentOrdering = null;
         this.eqClassCounter = 0;
         this.implicitRelations.clear();
+        
     }
 
 
@@ -543,7 +570,7 @@ public class DeltaComplex<V extends Comparable<V>> {
      * @param s2 oSimplex
      * @return Zyklus, falls einer vorhanden.
      */
-    public SortedSet<V> glue(Collection<V> s1, Collection<V> s2) {
+    public TreeSet<V> glue(Collection<V> s1, Collection<V> s2) {
 
         if (s1 == null || s2 == null)
             throw new NullPointerException("'null' ist kein gültiger oSimplex");
@@ -555,9 +582,11 @@ public class DeltaComplex<V extends Comparable<V>> {
             throw new NoSuchElementException("Ein übergebener Simplex ist nicht in diesen Komplex vorhanden");
         
 
-        
+        TreeSet<V> zyklus_unsorted = glue_unsafe(s1, s2);
+        TreeSet<V> zyklus = new TreeSet<>(this.getCurrentOrdering());
+        zyklus.addAll(zyklus_unsorted);
 
-        return glue_unsafe(s1,s2);
+        return zyklus;
     }
 
 

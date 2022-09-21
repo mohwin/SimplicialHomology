@@ -1,6 +1,8 @@
 package GUI;
 
-public class VisualVertex implements Comparable<VisualVertex> {
+import java.io.Serializable;
+
+public class VisualVertex implements Comparable<VisualVertex>, Serializable {
 
     int vertexID;
 
