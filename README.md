@@ -4,47 +4,23 @@ In diesem Projekt befindet sich ein Programm zur Berechnung der ganzzahligen sim
 
 Das Projekt befindet sich noch im Aufbau und ist unvollständig.
 
-Das GUI ist noch nicht fertig, aber  man kann es zum Teil bereits nutzen.
+In der ausführbaren Jar Datei "VisualDeltaComplex.jar" befindet sich ein GUI zur Eingabe von 2-dimensionalen $\Delta$-Komplexen. Dieses GUI befindet sich noch im Aufbau, kann aber schon genutzt werden. Mit dem GUI kann man die Homologie eines grafisch erstelltem 2-dimensionalen $\Delta$-Komplex errechnen. Der größte Unteschied zur vorheriger Version ist die automatische Vertex-Ordnung.
+Das GUI unterteilt sich grob in 3 Teile:<br>
+**Links**  befindet sich eine Darstellung des aktuellen $\Delta$-Komplex. Die Ordnung der Vertices ist direkt als erstes gegeben. (Das Programm erstellt selbst eine Ordnung der Verte-Menge). Darunter werden die im Komplex vorhandenen Simplizes angezeigt, wobei Seiten nicht angezeigt werden, aber durchaus im Komplex vorhanden sind. Darunter werden nichttriviale Äquivalenzklassen der Simplizes angezeigt; "=(1)(2)" bedeutet, dass die Vertices 1 und 2 äquivalent sind.<br>
+**Rechts** befindet sich der grafische Zeichenbereich. Hier kann man mit Linksklick einen Vertex setzten und mit Rechtsklick markieren. Markiert man 2 Vertices so wird gemäß der Reihenfolge wie diese markiert wurden ein Pfeil gemalt. Wenn man nun verklebt so wird die von dem Pfeil induzierte Ordnung (Ursprung < Ziel) dem Komplex übermittelt, der dann, falls nötig, die Ordnung auf der Vertex-Menge erneuert. <br>
+**Unten** befindet sich Knöpfe sowie der Ausgabeder Homologiegruppen. Hier ist eine kurze Beschreibung der Funktionen: <br>
+1. **Vertex Äquivalenzklassen anzeigen** Box. Bei Deaktivierung werden äquivalente Vertices nicht besonders beschriftet. Die Äquivalenzklassen sind aus der Liste Links nach wie vor entnehmbar.
+2. **Koeffizienten aus...**.Hier kann man auswählen, mit welchen Koeffizienten die Homologiegruppen gebildet werden sollen.
+3. **Homologie berechnen**. Klar
+4. **Simplex erzeugen** bildet aus den markierten (grünen) Vertices einen Simplex. Dabei ist die Reihenfolge der Markierung unrelevant.
+5. **Vertices löschen** löscht die markierten Vertices. ACHTUNG: Verklebungen werden evtl. nicht gelöst, man beachtet die Ausgabe der Äquivalenzklassen!
+6. **Verkleben mit...** Merkt sich den markierten Simplex (dieser ist nun gelb). Wählt man nun einen anderen Simplex kann man diese mit erneutem drücken des Buttons verkleben. War die Verklebung erfolgreich, so wird der zuletzt markierte Simplex gelb und man kann weiter mit diesen Simplizes verkleben. Das Drücken des **Auswahl aufheben** Buttons entfernt alle Markierungen. Ist eine Verklebung nicht möglich, da diese einen Zyklus induzieren würde, so wird der Zyklus in rot darsgestellt. Das Markieren eines Vertex entfernt diese rote Darstellung wieder.
 
-Der Zeichenbereich ist das Rechteck in der oberen rechten Ecke. Die Eingabe wird im Bereich Links daneben nochmal angezeigt. Darunter sind Buttons für die Steuerung und das Ausgabefeld der Homologiegruppen.
+Befindet sich die Maus im Zeichenbereich, so hat man auch folgende Tastenkürzel:
+1. Leertaste -> Simplex erzeugen
+2. Lösch Taste (Backspace) -> Vertices löschen
+3. Enter -> Verkleben mit...
+4. c -> Auswahl aufheben
+5. STRG + Z -> letzte Komplex-Änderung rückgängig machen.
 
-Mit der Maus kann man im **Zeichenbereich**:
-1) Linksklick   ->  Setzt einen Vertex an der geklickten Stelle, falls an dieser Stelle nicht bereits ein Vertex war.
-2) Rechtsklick  ->  Markiert oder entmarkiert den Vertex an der geklickten Stelle. Dieser wird dann grün angezeigt. Es können maximal 3 Vertizes gleichzeitig markiert     sein. Wird diese Grenze überschritten, wird der zuerst markierte Vertex entmarkiert.
-3) Mausradklick ->  Setzt und markiert einen Vertex an der geklickten Stelle.
-4) "Ziehen"     -> Indem man die LinksklickTaste der Maus gedrückt hält, kann man den Komplex im Zeichenbereich bewegen. Falls ein Vertex auf der Position war, an der man begonnen hat die Maustaste zu halten, so wird lediglich der Vertex bewegt.
-5) Mausradrollen -> Zoomen.
-
-Die **Buttons** unten haben folgende Effekte:
-1) Simplex erzeugen ->  Fasst die markierten Vertices zu einem Simplex zusammen. 1-Simplizes werden als Kanten, 2-Simplizes als Flächen angezeigt. Entmarkiert alle Vertices, bis auf den der zuletzt gesetzt wurde (dieser ist dann immer noch grün).
-2) Vertices löschen ->  Noch nicht implementiert. :(
-3) Verkleben mit... ->  Die markierten Vertices, die zusammen einen 0- 1- oder 2-Simplex bilden, werden als Verklebeargument "gemerkt", dabei ändert sich die Farbe des Simplex. Danach kann man einen anderen Simplex der gleichen Dimension durch seine Vertexmenge markieren. Wird dann wieder der Verkleben mit... Button gedrückt, so wird auch dieser als Verklebeargument gemerkt. Auf diese Weise kann man mehrere Simplizes merken, praktisch sind dann die folgenden 2 Buttons:
-4) Verklebungen bestätigen  ->  Verklebt alle durch den Verkleben mit.. Button gemerkten Simplizes miteinandner. Verklebte Kanten sind mit geichen Kleinbuchstaben, Verklebte Flächen durch gleiche Großbuchstaben gekennzeichnet, Verklebte Vertices werden nicht besonders gekennzeichnet, Verklebungen kann man der Liste Links entnehmen.
-5) Verklebung abbrechen ->  Bricht die Auswahl durch den Button Verkleben mit... ab.
-6) Zurücksetzen -> Löscht alle eingegebenen Simplizes und Vertices.
-
-Ist die Maus im Zeichenbereich, so kann man mit Shortcuts auf diese Funktionen zugreifen:
-1) Simplex erzeugen -> Leertaste
-2) Verkleben mit... -> Taste v
-3) Verklebungen bestätigen  -> Enter
-4) Verklebung abbrechen -> Taste a
-5) Zurücksetzen -> SHIFT + Taste c (NICHT Ctrl + c, wie kopieren)
-
-Wichtig ist, dass das Programm zu Zeit die Verklebungen mit a,b,c...,z bzw. mit A,B,C...,Z darstellen kann. Werden mehr Buchstaben gebraucht so produziert das Programm eine fehlerbehaftete bildliche Repräsentation, es sollte links auf die Eingabeliste geachtet werden.
-
-Die **Eingabeliste** links vom Zeichenbereich gibt die Eingaben an, die für einen Deltas.DeltaKomplex (aus dem SimplicialHomology JAR) gemacht werden. Man kann sie wie folgt übersetzen:
-1) +(a,b)      entspricht addSimplex(s(a,b))
-2) =(a,b)(c,d) entspricht glue(s(a,b),s(c,d))
-
-wie bei der Methode addSimplex(), werden alle UnterSeiten automatisch miteingefügt.
-
-In dem kleinen Textfeld unterhalb dieser Liste kann man auch selbst Eingaben machen, um so auch höher dimensionalere Simplizes eingeben zu können. Diese Eingabe ist noch in Arbeit, aber funktionstüchtig. Gibt man Beispielsweise "+ (1,2,3,4)" ein, so wird dieser Simplex korrekt hinzugefügt. Man kann auch Einträge entfernen, um zum Beispiel die Einträge "+ (1,2,3)" und "=(3,4)(5,6)" zu entfernen nimmt kman diese und ersetz das "+" oder "=" mit einem "-": "-(1,2,3)" und "-(3,4)(5,6)".
-Wichtig zu beachten ist sind folgende Aspekte:
-1) Die Eingaben auf dieser Weise beeinflussen das Zeichenfeld nicht. Es wird davon abgeraten die Graphische als auch die Textmethode **gleichzeitig** zu verwenden.
-2) Die Texteingabe ist noch unvollständig. Wird ein Komplex eingegebn, dessen Vertizes nicht natürlich geordnet sind, oder der aus anderen Gründen nicht gebildet werden kann, so gibt das Programm nur eine kurze, nichts sagende Fehlermeldung aus.
-
-Um die Homologiegruppen berechnen zu lassen hat man obigen Links die Menü-Leiste mit nur einem Eintrag. darin ist ein Panel "Homologie berechnen". Es werden alle 
-nichttrivialen **ganzzahligen** Homologiegruppen der Eingabe berechnet. Die Homologiegruppen werden links neben den Buttons ausgegeben. Die Zahlen oberhalb und unterhalb der Gruppen spiegeln einfach nur wieder, wie oft das Panel "Homologie berechnen" verwendet wurde.
-
-
-
+Das Speicherformat von Dateien ist ".vdlts". Im Ordner VDC_Beispiele sind 2 Beispiele dafür.
