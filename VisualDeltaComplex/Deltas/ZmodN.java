@@ -10,7 +10,10 @@ public class ZmodN implements RecordHIB<ZmodN> {
     public static final String _version = "1";
     
     public ZmodN(int value,int module) {
-        this.value = value%module;
+        int v = value%module;
+        if (v < 0 ) this.value = v+ module;
+        else this.value = v;
+        
         this.module = module;
     }
 
