@@ -109,7 +109,9 @@ public class GUI_Main extends JFrame {
     private void initMenubar() {
         // Menu Bar
         JMenuBar menubar = new JMenuBar();
+        
         JMenu Datei = new JMenu("Datei");
+
 
 
         JMenuItem cls = new JMenuItem("Neu");
@@ -183,12 +185,13 @@ public class GUI_Main extends JFrame {
 
         menubar.add(Datei);
 
+
+
         setJMenuBar(menubar);
         
     }
 
     public GUI_Main() {
-        
         initWindow();
 
         initLayout();
@@ -198,6 +201,7 @@ public class GUI_Main extends JFrame {
 
         pack();
         this.setSize(1200,800);
+        
     }
 
     public static void main(String[] args) {

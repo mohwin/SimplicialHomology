@@ -37,6 +37,8 @@ public class Zeichenbereich extends JPanel {
 
     private Deque<ZeichenMemento> mementos = new LinkedList<>();
 
+    private Deque<ZeichenMemento> forwardMementos = new LinkedList<>();
+
     
 
     /**
@@ -320,6 +322,7 @@ public class Zeichenbereich extends JPanel {
                 repaint();
             }
             updateAusgabe();
+            forwardMementos.clear();
         }
     }
 
@@ -332,6 +335,7 @@ public class Zeichenbereich extends JPanel {
             parent.deltaKomplex.addVertex(v);
             parent.komplexRepr.repaint();
             repaint();
+            forwardMementos.clear();
         }
     }
 
@@ -339,9 +343,15 @@ public class Zeichenbereich extends JPanel {
      * Speichert momentanen Komplex als Memento
      */
     private void secureMemento() {
-        if (mementos.size()>10)
+        if (mementos.size()>15)
             mementos.removeFirst();
         mementos.add(new ZeichenMemento(parent.deltaKomplex.getMemento(),maxVertex,scale));
+    }
+
+    private void secureMementoForward() {
+        if (forwardMementos.size()>15)
+        forwardMementos.removeLast();
+        forwardMementos.addFirst(new ZeichenMemento(parent.deltaKomplex.getMemento(),maxVertex,scale));
     }
     
     /**
@@ -359,6 +369,7 @@ public class Zeichenbereich extends JPanel {
                 repaint();
             }
             updateAusgabe();
+            forwardMementos.clear();
 
         }
 
@@ -380,7 +391,7 @@ public class Zeichenbereich extends JPanel {
                 repaint();
             }
             updateAusgabe();
-            
+            forwardMementos.clear();
         }
 
     }
@@ -400,6 +411,7 @@ public class Zeichenbereich extends JPanel {
             vertexZyklus = parent.deltaKomplex.glue(vertexQueue, glueIntermediateQueue);
             if (!vertexZyklus.isEmpty()) { // zyklus gefunden-> memento verwerfen
                 mementos.pollLast();
+                vertexQueue.clear();
             }
             glueIntermediateQueue.clear();
             glueIntermediateQueue.addAll(vertexQueue);
@@ -410,6 +422,7 @@ public class Zeichenbereich extends JPanel {
             parent.komplexRepr.repaint();
             repaint();
             updateAusgabe();
+            forwardMementos.clear();
         }
 
     }
@@ -431,6 +444,7 @@ public class Zeichenbereich extends JPanel {
             parent.komplexRepr.repaint();
             updateAusgabe();
             repaint();
+            forwardMementos.clear();
         }
 
     }
@@ -444,6 +458,7 @@ public class Zeichenbereich extends JPanel {
             glueIntermediateQueue.clear();
             updateAusgabe();
             repaint();
+
         }
 
     }
@@ -454,11 +469,35 @@ public class Zeichenbereich extends JPanel {
         public void actionPerformed(ActionEvent e) {
             if(mementos.peekLast() == null ) return;
             ZeichenMemento lst =  mementos.pollLast();
+            secureMementoForward();
             parent.deltaKomplex = lst.cmpl;
             maxVertex = lst.maxVertex;
+            scale = lst.scale;
 
             vertexQueue.clear();
             glueIntermediateQueue.clear();
+            vertexZyklus.clear();
+            updateEqBezMap();
+            updateAusgabe();
+            parent.komplexRepr.repaint();
+            repaint();
+        }
+
+    }
+
+    final class RedoDeltaChangingAction extends AbstractAction {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (forwardMementos.peekFirst() == null) return;
+            ZeichenMemento nxt = forwardMementos.pollFirst();
+            secureMemento();
+            parent.deltaKomplex = nxt.cmpl;
+            maxVertex = nxt.maxVertex;
+            scale = nxt.scale;
+            vertexQueue.clear();
+            glueIntermediateQueue.clear();
+            vertexZyklus.clear();
             updateEqBezMap();
             updateAusgabe();
             parent.komplexRepr.repaint();
@@ -482,6 +521,8 @@ public class Zeichenbereich extends JPanel {
             updateAusgabe();
             parent.komplexRepr.repaint();
             repaint();
+            forwardMementos.clear();
+            parent.ausgabebereich.clearAusgBoard();
         }
 
     }
@@ -520,6 +561,8 @@ public class Zeichenbereich extends JPanel {
         getActionMap().put("undoDeltaChanging", new UndoDeltaChangingAction());
 
         getActionMap().put("clearBoard",new ClearBoardAction());
+
+        getActionMap().put("redoDeltaChanging", new RedoDeltaChangingAction());
     }
     // --------------------------------------------------------------------------------------------
 
@@ -532,7 +575,7 @@ public class Zeichenbereich extends JPanel {
     Zeichenbereich(GUI_Main par) {
         this.parent = par;
         initOptions();
-        this.
+        
 
         init_keyBindings();
 
@@ -643,9 +686,11 @@ public class Zeichenbereich extends JPanel {
         ZeichenMemento lst = (ZeichenMemento) is.readObject();
         parent.deltaKomplex = lst.cmpl;
         maxVertex = lst.maxVertex;
+        scale = lst.scale;
 
         vertexQueue.clear();
         glueIntermediateQueue.clear();
+        vertexZyklus.clear();
         updateEqBezMap();
         updateAusgabe();
         parent.komplexRepr.repaint();

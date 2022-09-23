@@ -11,6 +11,8 @@ import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+
 import java.io.Serializable;
 
 
@@ -529,6 +531,24 @@ public class DeltaComplex<V extends Comparable<V>> implements Serializable {
         
     }
 
+    public <F extends RecordHIB<F>> List<String> getKomplexInfoString(F nullobj) {
+        List<String> ret = new ArrayList<>();
+
+        ret.add("Komplexdimension: " + this.dimension());
+        for (int i=this.dimension();i>=0;i--) 
+            ret.add("Anzahl der " + i + "-Simplizes: " + getSimplizes(i).size());
+        
+        for (int i=this.dimension();i>0;i--) {
+            ret.add("------------------------------");
+            LowDensitiyMatrix<F> mat = boundaryMap(i, nullobj);
+            ret.add(i + "-te Randmatrix: " + mat.getnS()+" Spalten, "+ mat.getnZ()+ " Zeilen:");
+            for (String s: mat.toString().replace('[',' ').replace(']',' ').split("\\n"))
+                ret.add(s);
+        }
+        
+
+        return ret;
+    }
 
     /**
      * Prüft, ob der Komplex diesen oSimplex beinhaltet. (Ordnung wird hier beachtet)
